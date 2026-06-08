@@ -1,0 +1,2553 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mundial 2026 — Pro Prods Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      :root {
+        --bg-main: #06070a;
+        --bg-card: rgba(255, 255, 255, 0.02);
+        --border-premium: rgba(255, 255, 255, 0.07);
+        --border-focus: rgba(255, 255, 255, 0.25);
+        --text-primary: #f5f5f7;
+        --text-muted: #86868b;
+        --accent-glow: rgba(147, 51, 234, 0.15);
+        --blur-effect: blur(20px);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 2rem clamp(1rem, 4vw, 4rem);
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
+      header h1 {
+        font-family: "Cinzel", serif;
+        font-size: clamp(2rem, 5vw, 3.8rem);
+        background: linear-gradient(180deg, #ffffff 30%, #6e6e73 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .auth-container {
+        max-width: 420px;
+        margin: 4rem auto;
+        background: var(--bg-card);
+        border: 1px solid var(--border-premium);
+        border-radius: 28px;
+        padding: 2.5rem;
+        backdrop-filter: var(--blur-effect);
+      }
+
+      .auth-toggle {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--border-premium);
+        padding-bottom: 1rem;
+      }
+
+      .auth-toggle span {
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .auth-toggle span.active {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .form-group label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .input-premium {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-premium);
+        color: var(--text-primary);
+        padding: 0.85rem 1.2rem;
+        border-radius: 14px;
+        outline: none;
+        font-size: 0.95rem;
+        transition: all 200ms ease;
+      }
+
+      .input-premium:focus {
+        border-color: var(--border-focus);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .champion-picker {
+        position: relative;
+        z-index: 2;
+      }
+
+      .champion-picker.is-open {
+        z-index: 90;
+      }
+
+      .champion-search-shell {
+        display: grid;
+        grid-template-columns: 22px 1fr auto;
+        grid-template-rows: auto auto;
+        align-items: center;
+        column-gap: 0.75rem;
+        row-gap: 0.55rem;
+        min-height: 58px;
+        padding: 0.75rem 0.85rem 0.85rem 1rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.05) 0%,
+          rgba(255, 255, 255, 0.025) 100%
+        );
+        transition: all 200ms ease-in-out;
+      }
+
+      .champion-search-shell:focus-within,
+      .champion-search-shell.is-open {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.08) 0%,
+          rgba(255, 255, 255, 0.04) 100%
+        );
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+        transform: scale(1.01);
+      }
+
+      .champion-search-icon {
+        color: var(--text-muted);
+        font-size: 1rem;
+        line-height: 1;
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .champion-search-input {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 1rem;
+        outline: none;
+        padding: 0.5rem 0;
+      }
+
+      .champion-search-input::placeholder {
+        color: var(--text-muted);
+      }
+
+      .champion-selected-chip {
+        grid-column: 1 / 4;
+        grid-row: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      .champion-chip-name {
+        font-weight: 650;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .champion-chip-meta {
+        color: var(--text-muted);
+        white-space: nowrap;
+        flex: 0 0 auto;
+      }
+
+      .champion-search-toggle {
+        grid-column: 3;
+        grid-row: 1;
+        width: auto;
+        min-width: 42px;
+        padding: 0.7rem 0.85rem;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: none;
+      }
+
+      .champion-search-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .champion-dropdown {
+        position: absolute;
+        top: calc(100% + 0.7rem);
+        left: 0;
+        right: 0;
+        z-index: 40;
+        padding: 0.75rem;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(11, 13, 18, 0.94);
+        backdrop-filter: blur(22px);
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+      }
+
+      .champion-dropdown-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 0.2rem;
+      }
+
+      .champion-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.9rem;
+        width: 100%;
+        padding: 0.9rem 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.025);
+        color: var(--text-primary);
+        transition: all 200ms ease-in-out;
+      }
+
+      .champion-option:hover,
+      .champion-option.is-active {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.12);
+        transform: scale(1.01);
+        box-shadow: none;
+      }
+
+      .champion-option-main {
+        display: flex;
+        flex-direction: column;
+        gap: 0.18rem;
+        align-items: flex-start;
+      }
+
+      .champion-option-main strong {
+        font-size: 0.96rem;
+        font-weight: 600;
+      }
+
+      .champion-option-main span {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .champion-empty-state {
+        padding: 1rem;
+        border-radius: 18px;
+        text-align: center;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.9rem;
+      }
+
+      button {
+        background: var(--text-primary);
+        color: #000;
+        border: none;
+        padding: 0.85rem 1.5rem;
+        border-radius: 14px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 200ms ease;
+        width: 100%;
+      }
+
+      button:hover:not(:disabled) {
+        background: #ffffff;
+        box-shadow: 0 0 25px var(--accent-glow);
+      }
+
+      button.secondary {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-primary);
+        border: 1px solid var(--border-premium);
+      }
+
+      button.secondary:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      #dashboard-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+        max-width: 1300px;
+        margin: 0 auto;
+      }
+
+      @media (min-width: 950px) {
+        #dashboard-layout {
+          grid-template-columns: 340px 1fr;
+        }
+      }
+
+      .panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-premium);
+        border-radius: 24px;
+        padding: 1.75rem;
+        backdrop-filter: var(--blur-effect);
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        position: relative;
+        overflow: visible;
+      }
+
+      .panel.panel-elevated {
+        z-index: 80;
+      }
+
+      .panel-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-premium);
+        padding-bottom: 0.75rem;
+      }
+
+      .profile-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(255, 255, 255, 0.01);
+        padding: 1rem;
+        border-radius: 16px;
+        border: 1px solid var(--border-premium);
+      }
+
+      .profile-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--border-premium);
+      }
+
+      .leaderboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .leaderboard-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.01);
+        font-size: 0.9rem;
+      }
+
+      .app-tabs {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin: 0 auto 1.35rem;
+        max-width: 1480px;
+        width: min(100%, 1480px);
+      }
+
+      .app-tab {
+        width: auto;
+        min-width: 160px;
+        padding: 0.82rem 1.15rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-muted);
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        transition: all 200ms ease-in-out;
+      }
+
+      .app-tab:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.13);
+        transform: scale(1.01);
+      }
+
+      .app-tab.active {
+        color: var(--text-primary);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.1) 0%,
+          rgba(255, 255, 255, 0.05) 100%
+        );
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      .app-screen {
+        width: min(100%, 1480px);
+        margin: 0 auto;
+      }
+
+      .leaderboard-screen-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 920px);
+        justify-content: center;
+      }
+
+      .match-card {
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid var(--border-premium);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        align-items: center;
+      }
+
+      @media (min-width: 600px) {
+        .match-card {
+          grid-template-columns: 1.5fr 1fr;
+        }
+      }
+
+      .prediction-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: md-flex-end;
+      }
+
+      .match-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+
+      .lineup-toggle {
+        width: auto;
+        padding: 0.72rem 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text-primary);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        transition: all 200ms ease-in-out;
+        cursor: pointer;
+      }
+
+      .lineup-toggle:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.14);
+        transform: scale(1.01);
+      }
+
+      .lineups-panel {
+        grid-column: 1 / -1;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.018);
+        border-radius: 20px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .lineups-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      @media (min-width: 760px) {
+        .lineups-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .lineups-team {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 18px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+      }
+
+      .lineups-team-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+      }
+
+      .lineups-team-title {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 650;
+      }
+
+      .team-flag {
+        width: 28px;
+        height: 20px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        object-fit: cover;
+      }
+
+      .lineups-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .lineups-meta .meta-chip {
+        font-size: 0.75rem;
+      }
+
+      .input-score {
+        width: 50px;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 0.4rem 0;
+      }
+
+      .nav-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1300px;
+        margin: 0 auto 2rem auto;
+        width: 100%;
+      }
+
+      .data-note {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.04),
+          rgba(255, 255, 255, 0.015)
+        );
+        border-radius: 20px;
+        padding: 1rem 1.1rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .groups-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+
+      .group-card {
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.018);
+        border-radius: 22px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        transition: all 200ms ease-in-out;
+      }
+
+      .group-card:hover {
+        transform: scale(1.01);
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .group-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: fit-content;
+        font-size: 0.72rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-primary);
+        padding: 0.45rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .group-team-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .team-pill {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.025);
+        color: var(--text-primary);
+        padding: 0.8rem 0.95rem;
+        border-radius: 18px;
+        font-size: 0.92rem;
+        text-align: left;
+        transition: all 200ms ease-in-out;
+      }
+
+      .team-pill:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .team-pill small {
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        white-space: nowrap;
+      }
+
+      .roster-shell {
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.018);
+        border-radius: 24px;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .roster-hero {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .roster-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .meta-chip {
+        padding: 0.48rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-muted);
+        font-size: 0.78rem;
+      }
+
+      .roster-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+
+      .roster-column {
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        padding: 1rem;
+        min-height: 100%;
+      }
+
+      .roster-column h3 {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--text-muted);
+        margin-bottom: 0.9rem;
+      }
+
+      .roster-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .roster-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.75rem 0.85rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 0.9rem;
+      }
+
+      .roster-item span:last-child {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .fixture-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+      }
+
+      .fixture-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        align-items: center;
+      }
+
+      .fixture-page {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.55rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+      }
+
+      .fixture-icon-btn {
+        width: auto;
+        padding: 0.62rem 0.85rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text-primary);
+        font-weight: 650;
+        font-size: 0.85rem;
+        transition: all 200ms ease-in-out;
+        cursor: pointer;
+      }
+
+      .fixture-icon-btn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.14);
+        transform: scale(1.01);
+      }
+
+      .fixture-icon-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .fixture-inline-select {
+        width: auto;
+        min-width: 160px;
+        padding: 0.7rem 0.95rem;
+        border-radius: 14px;
+      }
+
+      .sync-note {
+        margin-top: 0.85rem;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.9rem 1rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="auth-view" class="auth-container">
+      <div class="auth-toggle">
+        <span id="toggle-login" class="active" onclick="switchAuthMode('login')"
+          >Ingresar</span
+        >
+        <span id="toggle-signup" onclick="switchAuthMode('signup')"
+          >Registrarse</span
+        >
+      </div>
+
+      <div id="username-field" class="form-group hidden">
+        <label>Nombre de Usuario</label>
+        <input
+          type="text"
+          id="auth-username"
+          class="input-premium"
+          placeholder="ej: bayer_26"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input
+          type="email"
+          id="auth-email"
+          class="input-premium"
+          placeholder="tu@email.com"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input
+          type="password"
+          id="auth-password"
+          class="input-premium"
+          placeholder="••••••••"
+        />
+      </div>
+
+      <div id="avatar-field" class="form-group hidden">
+        <label>Foto de Perfil</label>
+        <input
+          type="file"
+          id="auth-avatar"
+          class="input-premium"
+          accept="image/*"
+        />
+      </div>
+
+      <button id="auth-submit-btn" onclick="handleAuthSubmit()">Entrar</button>
+    </div>
+
+    <div id="main-view" class="hidden">
+      <nav class="nav-bar">
+        <div class="profile-card" id="user-profile-summary"></div>
+        <button class="secondary" style="width: auto" onclick="handleLogout()">
+          Cerrar Sesión
+        </button>
+      </nav>
+
+      <div class="app-tabs">
+        <button
+          id="tab-dashboard"
+          type="button"
+          class="app-tab active"
+          onclick="switchAppScreen('dashboard')"
+        >
+          Inicio
+        </button>
+        <button
+          id="tab-leaderboard"
+          type="button"
+          class="app-tab"
+          onclick="switchAppScreen('leaderboard')"
+        >
+          Tabla General
+        </button>
+      </div>
+
+      <main id="dashboard-layout" class="app-screen">
+        <section
+          class="container-left"
+          style="display: flex; flex-direction: column; gap: 2rem"
+        >
+          <div class="panel" id="champion-panel">
+            <h2 class="panel-title">Predicción Campeón</h2>
+            <div class="form-group">
+              <label>Buscar Selección</label>
+              <div class="champion-picker" id="champion-picker">
+                <div class="champion-search-shell" id="champion-search-shell">
+                  <span class="champion-search-icon">⌕</span>
+                  <input
+                    id="champion-search"
+                    type="text"
+                    class="champion-search-input"
+                    placeholder="Buscar por nombre o grupo..."
+                    autocomplete="off"
+                    onfocus="openChampionDropdown()"
+                    oninput="filterChampionOptions()"
+                    onkeydown="handleChampionSearchKeydown(event)"
+                  />
+                  <div
+                    id="champion-selected-chip"
+                    class="champion-selected-chip hidden"
+                  ></div>
+                  <button
+                    type="button"
+                    id="champion-toggle-btn"
+                    class="champion-search-toggle"
+                    onclick="toggleChampionDropdown()"
+                  >
+                    ▾
+                  </button>
+                </div>
+                <div id="champion-dropdown" class="champion-dropdown hidden">
+                  <div
+                    id="champion-options"
+                    class="champion-dropdown-list"
+                  ></div>
+                </div>
+                <select id="champion-select" class="hidden">
+                  <option value="">Selecciona tu Candidato...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 2rem">
+          <div class="panel">
+            <h2 class="panel-title">Fixture Oficial & Tus Predicciones</h2>
+            <div id="fixture-data-note" class="data-note"></div>
+            <div id="fixture-sync-note" class="sync-note"></div>
+            <div class="fixture-toolbar">
+              <div class="fixture-actions">
+                <button
+                  id="fixture-toggle-btn"
+                  class="fixture-icon-btn secondary"
+                  type="button"
+                  onclick="toggleFixtureVisibility()"
+                >
+                  Ocultar Fixture
+                </button>
+                <button
+                  id="fixture-sync-btn"
+                  class="fixture-icon-btn"
+                  type="button"
+                  onclick="syncAllToDatabase()"
+                >
+                  Sincronizar BD
+                </button>
+                <select
+                  id="fixture-page-size"
+                  class="input-premium fixture-inline-select"
+                  onchange="changeFixturePageSize()"
+                >
+                  <option value="6" selected>6 por página</option>
+                  <option value="10">10 por página</option>
+                  <option value="16">16 por página</option>
+                </select>
+              </div>
+              <div class="fixture-actions">
+                <button
+                  id="fixture-prev-btn"
+                  class="fixture-icon-btn"
+                  type="button"
+                  onclick="goToFixturePage(-1)"
+                >
+                  Anterior
+                </button>
+                <div id="fixture-page-indicator" class="fixture-page"></div>
+                <button
+                  id="fixture-next-btn"
+                  class="fixture-icon-btn"
+                  type="button"
+                  onclick="goToFixturePage(1)"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+            <div
+              id="matches-container"
+              style="display: flex; flex-direction: column; gap: 1.25rem"
+            ></div>
+          </div>
+
+          <div class="panel">
+            <h2 class="panel-title">Grupos, Equipos & Alineaciones (FIFA)</h2>
+            <div id="squad-data-note" class="data-note"></div>
+            <div id="groups-grid" class="groups-grid"></div>
+
+            <div id="lineup-shell" class="roster-shell hidden">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;"
+              >
+                <div>
+                  <div
+                    style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 0.4rem;"
+                  >
+                    Alineación del Equipo Seleccionado
+                  </div>
+                  <div id="selected-team-lineup-title" style="font-size: 1rem; font-weight: 600;"></div>
+                </div>
+                <button
+                  type="button"
+                  class="fixture-icon-btn"
+                  style="width: auto;"
+                  onclick="clearSelectedTeamLineup()"
+                >
+                  Ocultar
+                </button>
+              </div>
+              <div id="lineup-panel"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <main
+        id="leaderboard-view"
+        class="app-screen leaderboard-screen-layout hidden"
+      >
+        <section class="panel">
+          <h2 class="panel-title">Tabla General</h2>
+          <div
+            style="color: var(--text-muted); line-height: 1.5; margin-top: -0.5rem;"
+          >
+            Ranking completo del Mundial. Esta vista queda separada para que pueda crecer sin estirar el dashboard principal.
+          </div>
+          <div id="leaderboard" class="leaderboard-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./worldCupFallbackData.js"></script>
+    <script>
+      const SUPABASE_URL = "https://wtajqttsbonjqtngzzxc.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0YWpxdHRzYm9uanF0bmd6enhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MzkzMzgsImV4cCI6MjA5NjUxNTMzOH0.7cLPA6w3gQPtPwGtbFSA3iYCx3246u13KbY0P3a5fj4";
+      const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+      );
+
+      const fallbackData = window.WORLD_CUP_2026_FALLBACK || {
+        teams: [],
+        groups: {},
+        rosters: {},
+        matches: [],
+      };
+      const FIFA_API_BASE = "https://api.fifa.com/api/v3";
+      const FIFA_COMPETITION_ID = "17";
+      const FIFA_SEASON_ID = "285023";
+      const FIFA_GROUP_STAGE_ID = "289273";
+      const FIFA_LANGUAGE = "es";
+      const LOCAL_CHAMPION_KEY = "wc2026-local-champion";
+      const LOCAL_PREDICTIONS_KEY = "wc2026-local-predictions";
+      const LOCAL_PENDING_SYNC_KEY = "wc2026-pending-sync";
+
+      let currentSession = null;
+      let authMode = "login";
+      let teamsCache = [];
+      let matchesCache = [];
+      let usingSupabaseData = false;
+      let usingApiFifa = false;
+      let lineupsCache = {};
+      let selectedTeamForLineup = null;
+      let championSearchState = {
+        options: [],
+        filtered: [],
+        open: false,
+        highlightedIndex: -1,
+      };
+      let fixtureState = {
+        collapsed: false,
+        page: 1,
+        pageSize: 6,
+        totalPages: 1,
+        totalItems: 0,
+      };
+      let fixtureMatchesRenderCache = [];
+      let activeAppScreen = "dashboard";
+
+      function getLocalChampionPrediction(userId) {
+        return localStorage.getItem(`${LOCAL_CHAMPION_KEY}:${userId}`) || "";
+      }
+
+      function setLocalChampionPrediction(userId, teamId) {
+        const key = `${LOCAL_CHAMPION_KEY}:${userId}`;
+        if (teamId) {
+          localStorage.setItem(key, teamId);
+        } else {
+          localStorage.removeItem(key);
+        }
+      }
+
+      function getLocalPredictions(userId) {
+        const raw = localStorage.getItem(`${LOCAL_PREDICTIONS_KEY}:${userId}`);
+        if (!raw) return {};
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return {};
+        }
+      }
+
+      function saveLocalPrediction(userId, matchId, scoreA, scoreB) {
+        const next = getLocalPredictions(userId);
+        next[matchId] = {
+          predicted_score_a: parseInt(scoreA, 10),
+          predicted_score_b: parseInt(scoreB, 10),
+        };
+        localStorage.setItem(
+          `${LOCAL_PREDICTIONS_KEY}:${userId}`,
+          JSON.stringify(next),
+        );
+      }
+
+      function getPendingSync(userId) {
+        const raw = localStorage.getItem(`${LOCAL_PENDING_SYNC_KEY}:${userId}`);
+        if (!raw) return { predictions: [], champion: false };
+        try {
+          const parsed = JSON.parse(raw);
+          return {
+            predictions: Array.isArray(parsed.predictions) ? parsed.predictions : [],
+            champion: Boolean(parsed.champion),
+          };
+        } catch {
+          return { predictions: [], champion: false };
+        }
+      }
+
+      function setPendingSync(userId, nextState) {
+        localStorage.setItem(
+          `${LOCAL_PENDING_SYNC_KEY}:${userId}`,
+          JSON.stringify({
+            predictions: nextState.predictions || [],
+            champion: Boolean(nextState.champion),
+          }),
+        );
+      }
+
+      function addPendingPrediction(userId, matchId) {
+        const state = getPendingSync(userId);
+        const id = String(matchId);
+        if (!state.predictions.includes(id)) state.predictions.push(id);
+        setPendingSync(userId, state);
+      }
+
+      function removePendingPrediction(userId, matchId) {
+        const state = getPendingSync(userId);
+        const id = String(matchId);
+        state.predictions = state.predictions.filter((x) => x !== id);
+        setPendingSync(userId, state);
+      }
+
+      function setPendingChampion(userId, pending) {
+        const state = getPendingSync(userId);
+        state.champion = Boolean(pending);
+        setPendingSync(userId, state);
+      }
+
+      function numberOrString(value) {
+        const asNumber = Number(value);
+        return Number.isFinite(asNumber) ? asNumber : String(value);
+      }
+
+      function findMatchById(matchId) {
+        const id = String(matchId);
+        const baseMatches = getBaseMatches();
+        return baseMatches.find((m) => String(m.id) === id) || null;
+      }
+
+      function findTeamById(teamId) {
+        const id = String(teamId);
+        const baseTeams = teamsCache.length ? teamsCache : fallbackData.teams || [];
+        return baseTeams.find((t) => String(t.id) === id) || null;
+      }
+
+      async function ensureTeamInDb(teamId) {
+        if (!teamId) return { ok: true };
+
+        const team = findTeamById(teamId);
+        if (!team) return { ok: false, reason: "missing_team" };
+
+        const payload = {
+          id: String(team.id),
+          name: team.name,
+          flag_url: team.flag_url || null,
+          group_id: team.group_id || null,
+        };
+
+        const { error } = await supabaseClient
+          .from("teams")
+          .upsert(payload, { onConflict: "id" });
+
+        if (error) {
+          return { ok: false, reason: "team_upsert_failed", error };
+        }
+
+        return { ok: true };
+      }
+
+      async function ensureMatchAndTeamsInDb(match) {
+        if (!match) return { ok: false, reason: "missing_match" };
+
+        const home = findTeamById(match.team_a_id);
+        const away = findTeamById(match.team_b_id);
+
+        const teamPayloads = [home, away]
+          .filter(Boolean)
+          .map((team) => ({
+            id: String(team.id),
+            name: team.name,
+            flag_url: team.flag_url || null,
+            group_id: team.group_id || null,
+          }));
+
+        if (teamPayloads.length) {
+          const { error: teamsError } = await supabaseClient
+            .from("teams")
+            .upsert(teamPayloads, { onConflict: "id" });
+          if (teamsError) {
+            return { ok: false, reason: "teams_upsert_failed", error: teamsError };
+          }
+        }
+
+        const matchPayload = {
+          id: numberOrString(match.id),
+          team_a_id: String(match.team_a_id),
+          team_b_id: String(match.team_b_id),
+          group_id: match.group_id || null,
+          stage: match.stage || "group",
+          match_date: match.match_date,
+          score_a: match.score_a ?? null,
+          score_b: match.score_b ?? null,
+          finished: Boolean(match.finished),
+        };
+
+        const { error: matchError } = await supabaseClient
+          .from("matches")
+          .upsert(matchPayload, { onConflict: "id" });
+
+        if (matchError) {
+          return { ok: false, reason: "match_upsert_failed", error: matchError };
+        }
+
+        return { ok: true };
+      }
+
+      async function upsertPredictionToDb(userId, matchId, scoreA, scoreB) {
+        const payload = {
+          user_id: userId,
+          match_id: numberOrString(matchId),
+          predicted_score_a: parseInt(scoreA, 10),
+          predicted_score_b: parseInt(scoreB, 10),
+        };
+
+        const { error } = await supabaseClient
+          .from("predictions")
+          .upsert(payload, { onConflict: "user_id,match_id" });
+
+        if (error) return { ok: false, error };
+        return { ok: true };
+      }
+
+      function isRlsError(error) {
+        return error?.code === "42501";
+      }
+
+      function describeSyncError(error, targetTable) {
+        if (isRlsError(error)) {
+          return `RLS de Supabase bloquea el insert/update en <strong style="color: var(--text-primary);">${targetTable}</strong>. Necesitás crear una policy para usuarios autenticados o mover esta operación a un backend con service role.`;
+        }
+
+        return error?.message || "error desconocido";
+      }
+
+      function renderFixtureSyncNote(message, tone) {
+        const el = document.getElementById("fixture-sync-note");
+        if (!el) return;
+
+        const palette =
+          tone === "ok"
+            ? "rgba(34, 197, 94, 0.15)"
+            : tone === "warn"
+              ? "rgba(245, 158, 11, 0.16)"
+              : tone === "loading"
+                ? "rgba(59, 130, 246, 0.14)"
+                : "rgba(239, 68, 68, 0.14)";
+
+        el.style.borderColor = palette;
+        el.innerHTML = message;
+      }
+
+      function refreshSyncUi() {
+        if (!currentSession) return;
+        const state = getPendingSync(currentSession.user.id);
+        const pendingPreds = state.predictions.length;
+        const pendingChamp = state.champion;
+
+        const btn = document.getElementById("fixture-sync-btn");
+        if (btn) {
+          btn.disabled = pendingPreds === 0 && !pendingChamp;
+          btn.innerHTML =
+            pendingPreds === 0 && !pendingChamp
+              ? "BD al día"
+              : `Sincronizar BD (${pendingPreds}${pendingChamp ? " + campeón" : ""})`;
+        }
+
+        if (pendingPreds === 0 && !pendingChamp) {
+          renderFixtureSyncNote(
+            "Tus predicciones están sincronizadas con la base de datos.",
+            "ok",
+          );
+          return;
+        }
+
+        renderFixtureSyncNote(
+          `Tenés <strong style="color: var(--text-primary);">${pendingPreds}</strong> predicciones pendientes de subir a la base${pendingChamp ? " y el campeón pendiente" : ""}.`,
+          "warn",
+        );
+      }
+
+      function normalizeSearchText(value) {
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function getSelectedChampionTeam() {
+        const selectedId = document.getElementById("champion-select")?.value || "";
+        return championSearchState.options.find((team) => team.id === selectedId) || null;
+      }
+
+      function renderChampionSelection() {
+        const chip = document.getElementById("champion-selected-chip");
+        const input = document.getElementById("champion-search");
+        if (!chip || !input) return;
+
+        const selectedTeam = getSelectedChampionTeam();
+        if (!selectedTeam) {
+          chip.classList.add("hidden");
+          chip.innerHTML = "";
+          input.placeholder = "Buscar por nombre o grupo...";
+          return;
+        }
+
+        chip.classList.remove("hidden");
+        chip.innerHTML = `
+          <span class="champion-chip-name">${escapeHtml(selectedTeam.name)}</span>
+          <span class="champion-chip-meta">Grupo ${escapeHtml(selectedTeam.group_id || "-")}</span>
+        `;
+        input.placeholder = "Cambiar selección...";
+      }
+
+      function updateChampionDropdownState(isOpen) {
+        const dropdown = document.getElementById("champion-dropdown");
+        const shell = document.getElementById("champion-search-shell");
+        const picker = document.getElementById("champion-picker");
+        const panel = document.getElementById("champion-panel");
+        if (!dropdown || !shell || !picker || !panel) return;
+
+        championSearchState.open = isOpen;
+        dropdown.classList.toggle("hidden", !isOpen);
+        shell.classList.toggle("is-open", isOpen);
+        picker.classList.toggle("is-open", isOpen);
+        panel.classList.toggle("panel-elevated", isOpen);
+      }
+
+      function renderChampionOptions() {
+        const container = document.getElementById("champion-options");
+        const input = document.getElementById("champion-search");
+        const selectedId = document.getElementById("champion-select")?.value || "";
+        if (!container || !input) return;
+
+        const query = normalizeSearchText(input.value);
+        championSearchState.filtered = championSearchState.options.filter((team) => {
+          if (!query) return true;
+          const haystack = normalizeSearchText(
+            `${team.name} grupo ${team.group_id || "-"} ${team.group_id || ""}`,
+          );
+          return haystack.includes(query);
+        });
+
+        if (!championSearchState.filtered.length) {
+          championSearchState.highlightedIndex = -1;
+          container.innerHTML =
+            '<div class="champion-empty-state">No encontré ninguna selección con esa búsqueda.</div>';
+          return;
+        }
+
+        if (
+          championSearchState.highlightedIndex >= championSearchState.filtered.length ||
+          championSearchState.highlightedIndex < 0
+        ) {
+          championSearchState.highlightedIndex = 0;
+        }
+
+        container.innerHTML = championSearchState.filtered
+          .map((team, index) => {
+            const isSelected = selectedId === team.id;
+            const isActive = championSearchState.highlightedIndex === index;
+            return `
+              <button
+                type="button"
+                class="champion-option ${isActive ? "is-active" : ""}"
+                data-index="${index}"
+                onclick="selectChampionOption('${escapeHtml(team.id)}')"
+              >
+                <div class="champion-option-main">
+                  <strong>${escapeHtml(team.name)}</strong>
+                  <span>Grupo ${escapeHtml(team.group_id || "-")}</span>
+                </div>
+                <span class="meta-chip">${isSelected ? "Seleccionado" : "Elegir"}</span>
+              </button>
+            `;
+          })
+          .join("");
+
+        const activeOption = container.querySelector(".champion-option.is-active");
+        if (activeOption) {
+          activeOption.scrollIntoView({ block: "nearest" });
+        }
+      }
+
+      function populateChampionPicker(selectedChampionId) {
+        const champSelect = document.getElementById("champion-select");
+        if (!champSelect) return;
+
+        champSelect.innerHTML =
+          '<option value="">Selecciona tu Candidato...</option>';
+
+        championSearchState.options = teamsCache.map((team) => ({
+          id: String(team.id),
+          name: team.name,
+          group_id: team.group_id || "-",
+        }));
+
+        championSearchState.options.forEach((team) => {
+          const opt = document.createElement("option");
+          opt.value = team.id;
+          opt.innerText = team.name;
+          if (String(selectedChampionId || "") === team.id) opt.selected = true;
+          champSelect.appendChild(opt);
+        });
+
+        champSelect.value = selectedChampionId ? String(selectedChampionId) : "";
+        championSearchState.highlightedIndex = -1;
+        const input = document.getElementById("champion-search");
+        if (input) input.value = "";
+        renderChampionSelection();
+        renderChampionOptions();
+      }
+
+      function openChampionDropdown() {
+        updateChampionDropdownState(true);
+        renderChampionOptions();
+      }
+
+      function closeChampionDropdown() {
+        const input = document.getElementById("champion-search");
+        if (input) input.value = "";
+        championSearchState.highlightedIndex = -1;
+        updateChampionDropdownState(false);
+        renderChampionSelection();
+      }
+
+      function toggleChampionDropdown() {
+        if (championSearchState.open) {
+          closeChampionDropdown();
+        } else {
+          openChampionDropdown();
+          document.getElementById("champion-search")?.focus();
+        }
+      }
+
+      function filterChampionOptions() {
+        if (!championSearchState.open) updateChampionDropdownState(true);
+        championSearchState.highlightedIndex = 0;
+        renderChampionOptions();
+      }
+
+      async function selectChampionOption(teamId) {
+        const champSelect = document.getElementById("champion-select");
+        if (!champSelect) return;
+
+        champSelect.value = String(teamId || "");
+        renderChampionSelection();
+        closeChampionDropdown();
+        await saveChampionPrediction();
+      }
+
+      function handleChampionSearchKeydown(event) {
+        if (!championSearchState.open && ["ArrowDown", "Enter"].includes(event.key)) {
+          event.preventDefault();
+          openChampionDropdown();
+          return;
+        }
+
+        if (!championSearchState.filtered.length) {
+          if (event.key === "Escape") closeChampionDropdown();
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          championSearchState.highlightedIndex =
+            (championSearchState.highlightedIndex + 1) %
+            championSearchState.filtered.length;
+          renderChampionOptions();
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          championSearchState.highlightedIndex =
+            (championSearchState.highlightedIndex - 1 + championSearchState.filtered.length) %
+            championSearchState.filtered.length;
+          renderChampionOptions();
+        }
+
+        if (event.key === "Enter") {
+          event.preventDefault();
+          const option =
+            championSearchState.filtered[championSearchState.highlightedIndex] ||
+            championSearchState.filtered[0];
+          if (option) selectChampionOption(option.id);
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeChampionDropdown();
+        }
+      }
+
+      function resolveFifaPictureUrl(urlTemplate) {
+        if (!urlTemplate) return "";
+        return urlTemplate
+          .replace("{format}", "png")
+          .replace("{size}", "4");
+      }
+
+      function safeText(list) {
+        return list?.[0]?.Description || "";
+      }
+
+      function parseGroupId(groupName) {
+        if (!groupName) return null;
+        const match = groupName.match(/([A-L])$/i);
+        return match ? match[1].toUpperCase() : null;
+      }
+
+      async function loadFifaGroupStageData() {
+        const url = `${FIFA_API_BASE}/calendar/matches?idCompetition=${FIFA_COMPETITION_ID}&idSeason=${FIFA_SEASON_ID}&idStage=${FIFA_GROUP_STAGE_ID}&count=500&language=${FIFA_LANGUAGE}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("No se pudo leer FIFA calendar/matches");
+        const data = await response.json();
+        const results = data?.Results || [];
+
+        const teamsById = {};
+        const matches = results
+          .filter((match) => match?.Home?.IdTeam && match?.Away?.IdTeam)
+          .map((match) => {
+            const groupId = parseGroupId(safeText(match.GroupName));
+            const venue = safeText(match?.Stadium?.Name);
+
+            const homeTeamId = String(match.Home.IdTeam);
+            const awayTeamId = String(match.Away.IdTeam);
+            const homeName = safeText(match.Home.TeamName) || match.Home.Abbreviation;
+            const awayName = safeText(match.Away.TeamName) || match.Away.Abbreviation;
+
+            teamsById[homeTeamId] = {
+              id: homeTeamId,
+              name: homeName,
+              group_id: groupId,
+              flag_url: resolveFifaPictureUrl(match.Home.PictureUrl),
+            };
+            teamsById[awayTeamId] = {
+              id: awayTeamId,
+              name: awayName,
+              group_id: groupId,
+              flag_url: resolveFifaPictureUrl(match.Away.PictureUrl),
+            };
+
+            return {
+              id: String(match.IdMatch),
+              stage: "group",
+              group_id: groupId,
+              match_date: match.Date,
+              venue,
+              team_a_id: homeTeamId,
+              team_b_id: awayTeamId,
+              team_a_name: homeName,
+              team_b_name: awayName,
+              team_a_flag_url: resolveFifaPictureUrl(match.Home.PictureUrl),
+              team_b_flag_url: resolveFifaPictureUrl(match.Away.PictureUrl),
+              score_a: match.HomeTeamScore ?? null,
+              score_b: match.AwayTeamScore ?? null,
+              finished: match.MatchStatus === 0,
+            };
+          });
+
+        teamsCache = Object.values(teamsById)
+          .map((team) => ({
+            ...team,
+            group_id: team.group_id || "-",
+          }))
+          .sort((a, b) => {
+            if (a.group_id === b.group_id) return a.name.localeCompare(b.name);
+            return (a.group_id || "").localeCompare(b.group_id || "");
+          });
+
+        matchesCache = matches.sort(
+          (a, b) => new Date(a.match_date) - new Date(b.match_date),
+        );
+
+        usingApiFifa = teamsCache.length > 0 && matchesCache.length > 0;
+      }
+
+      async function loadSupabaseTournamentData() {
+        const [{ data: teams, error: teamsError }, { data: matches, error: matchesError }] =
+          await Promise.all([
+            supabaseClient
+              .from("teams")
+              .select("id, name, group_id, flag_url")
+              .order("group_id")
+              .order("name"),
+            supabaseClient
+              .from("matches")
+              .select(
+                "id, team_a_id, team_b_id, group_id, stage, match_date, score_a, score_b, finished",
+              )
+              .order("match_date"),
+          ]);
+
+        if (teamsError) throw teamsError;
+        if (matchesError) throw matchesError;
+
+        const safeTeams = (teams || []).map((team) => ({
+          id: String(team.id),
+          name: team.name,
+          group_id: team.group_id || "-",
+          flag_url: team.flag_url || null,
+        }));
+
+        const teamsById = safeTeams.reduce((acc, team) => {
+          acc[String(team.id)] = team;
+          return acc;
+        }, {});
+
+        const safeMatches = (matches || []).map((match) => {
+          const home = teamsById[String(match.team_a_id)];
+          const away = teamsById[String(match.team_b_id)];
+          return {
+            id: String(match.id),
+            team_a_id: String(match.team_a_id),
+            team_b_id: String(match.team_b_id),
+            group_id: match.group_id || null,
+            stage: match.stage || "group",
+            match_date: match.match_date,
+            score_a: match.score_a ?? null,
+            score_b: match.score_b ?? null,
+            finished: Boolean(match.finished),
+            team_a_name: home?.name || String(match.team_a_id),
+            team_b_name: away?.name || String(match.team_b_id),
+            team_a_flag_url: home?.flag_url || null,
+            team_b_flag_url: away?.flag_url || null,
+          };
+        });
+
+        teamsCache = safeTeams;
+        matchesCache = safeMatches;
+        usingSupabaseData = safeTeams.length > 0 && safeMatches.length > 0;
+      }
+
+      async function fetchMatchLineups(matchId) {
+        if (lineupsCache[matchId]) return lineupsCache[matchId];
+
+        const url = `${FIFA_API_BASE}/live/football/${FIFA_COMPETITION_ID}/${FIFA_SEASON_ID}/${FIFA_GROUP_STAGE_ID}/${matchId}?language=${FIFA_LANGUAGE}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          lineupsCache[matchId] = { status: "error", reason: "http_error" };
+          return lineupsCache[matchId];
+        }
+
+        const data = await response.json();
+        if (!data) {
+          lineupsCache[matchId] = { status: "unavailable", reason: "null_body" };
+          return lineupsCache[matchId];
+        }
+
+        function mapTeam(team) {
+          const players = team?.Players || [];
+          const starters = players.filter(
+            (player) =>
+              player.Status === 1 &&
+              player.LineupX !== null &&
+              player.LineupY !== null,
+          );
+          const subs = players.filter((player) => player.Status === 2);
+          const coach = team?.Coaches?.find((c) => c.Role === 0);
+
+          return {
+            id: String(team.IdTeam),
+            name: safeText(team.TeamName) || team.Abbreviation || "",
+            flag_url: resolveFifaPictureUrl(team.PictureUrl),
+            tactics: team.Tactics || "",
+            coach: safeText(coach?.Name) || "",
+            starters: starters.map((player) => ({
+              id: String(player.IdPlayer),
+              name: safeText(player.PlayerName),
+              shirt: player.ShirtNumber,
+            })),
+            subs: subs.map((player) => ({
+              id: String(player.IdPlayer),
+              name: safeText(player.PlayerName),
+              shirt: player.ShirtNumber,
+            })),
+          };
+        }
+
+        lineupsCache[matchId] = {
+          status: "ok",
+          home: mapTeam(data.HomeTeam),
+          away: mapTeam(data.AwayTeam),
+        };
+
+        return lineupsCache[matchId];
+      }
+
+      function getFallbackRoster(teamId) {
+        return (
+          fallbackData.rosters?.[teamId] || {
+            goalkeepers: [],
+            defenders: [],
+            midfielders: [],
+            forwards: [],
+            coach: "",
+          }
+        );
+      }
+
+      function getAvailableFallbackRosterCount() {
+        return (fallbackData.teams || []).filter((team) => {
+          const roster = getFallbackRoster(team.id);
+          return (
+            roster.goalkeepers.length ||
+            roster.defenders.length ||
+            roster.midfielders.length ||
+            roster.forwards.length
+          );
+        }).length;
+      }
+
+      function getTeamById(teamId) {
+        return teamsCache.find((team) => team.id === teamId) || null;
+      }
+
+      function uniquePlayers(players) {
+        return [...new Set(players.filter(Boolean))];
+      }
+
+      function buildProbableLineup(roster) {
+        const starters = uniquePlayers([
+          ...(roster.goalkeepers || []).slice(0, 1),
+          ...(roster.defenders || []).slice(0, 4),
+          ...(roster.midfielders || []).slice(0, 3),
+          ...(roster.forwards || []).slice(0, 3),
+        ]);
+
+        const fullSquad = uniquePlayers([
+          ...(roster.goalkeepers || []),
+          ...(roster.defenders || []),
+          ...(roster.midfielders || []),
+          ...(roster.forwards || []),
+        ]);
+
+        return {
+          starters,
+          bench: fullSquad.filter((player) => !starters.includes(player)),
+        };
+      }
+
+      function renderPlayerList(players, label) {
+        if (!players.length) {
+          return `<div class="roster-item"><span>Sin datos disponibles</span><span>${label}</span></div>`;
+        }
+
+        return players
+          .map(
+            (player) =>
+              `<div class="roster-item"><span>${player}</span><span>${label}</span></div>`,
+          )
+          .join("");
+      }
+
+      function renderDataNotes() {
+        const fixtureNote = document.getElementById("fixture-data-note");
+        const squadNote = document.getElementById("squad-data-note");
+
+        fixtureNote.innerHTML = usingSupabaseData
+          ? "Fixture y equipos cargados desde tu base Supabase. Las predicciones y el campeón se sincronizan contra esa misma base."
+          : "No se pudo cargar `teams/matches` desde Supabase. Se usa un respaldo local como contingencia.";
+
+        squadNote.innerHTML = usingSupabaseData
+          ? "Los grupos y equipos salen de Supabase. Las alineaciones (titulares y suplentes) se consultan en vivo desde la API pública de FIFA para cada partido."
+          : `No se pudo cargar Supabase. Se muestra respaldo local (plantel disponible para ${getAvailableFallbackRosterCount()} equipos).`;
+      }
+
+      function renderGroupsOverview() {
+        const groupsGrid = document.getElementById("groups-grid");
+        groupsGrid.innerHTML = "";
+
+        const grouped = teamsCache.reduce((acc, team) => {
+          const groupId = team.group_id || "Sin Grupo";
+          if (!acc[groupId]) acc[groupId] = [];
+          acc[groupId].push(team);
+          return acc;
+        }, {});
+
+        Object.keys(grouped)
+          .sort()
+          .forEach((groupId) => {
+            const card = document.createElement("div");
+            card.className = "group-card";
+            card.innerHTML = `
+              <div class="group-badge">Grupo ${groupId}</div>
+              <div class="group-team-list">
+                ${grouped[groupId]
+                  .map((team) => {
+                    return `
+                      <button class="team-pill" type="button" onclick="selectTeamNextMatch('${team.id}')">
+                        <span>${team.name}</span>
+                        <small>${team.flag_url ? "FIFA" : ""}</small>
+                      </button>
+                    `;
+                  })
+                  .join("")}
+              </div>
+            `;
+            groupsGrid.appendChild(card);
+          });
+      }
+
+      function getBaseMatches() {
+        return matchesCache.length ? matchesCache : fallbackData.matches || [];
+      }
+
+      function findNextMatchForTeam(teamId) {
+        return getBaseMatches()
+          .slice()
+          .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+          .find((match) => match.team_a_id === teamId || match.team_b_id === teamId);
+      }
+
+      async function selectTeamNextMatch(teamId) {
+        selectedTeamForLineup = String(teamId);
+        document.getElementById("lineup-shell")?.classList.remove("hidden");
+
+        const team = getTeamById(selectedTeamForLineup);
+        const title = document.getElementById("selected-team-lineup-title");
+        if (title) {
+          title.innerHTML = team
+            ? `${team.name} · ${team.group_id ? `Grupo ${team.group_id}` : "Sin grupo"}`
+            : "Equipo seleccionado";
+        }
+
+        await renderSelectedLineups();
+      }
+
+      function clearSelectedTeamLineup() {
+        selectedTeamForLineup = null;
+        document.getElementById("lineup-shell")?.classList.add("hidden");
+        const panel = document.getElementById("lineup-panel");
+        if (panel) {
+          panel.innerHTML =
+            '<div style="color: var(--text-muted);">Selecciona un equipo para ver su alineación.</div>';
+        }
+      }
+
+      async function renderSelectedLineups() {
+        const panel = document.getElementById("lineup-panel");
+        const teamId = selectedTeamForLineup;
+        const matchInfo = teamId ? findNextMatchForTeam(teamId) : null;
+
+        if (!teamId) {
+          panel.innerHTML =
+            '<div style="color: var(--text-muted);">Selecciona un equipo para ver su alineación.</div>';
+          return;
+        }
+
+        const matchLabel = matchInfo
+          ? `${matchInfo.team_a_name || ""} vs ${matchInfo.team_b_name || ""}`
+          : "";
+        const matchKickoff = matchInfo
+          ? new Date(matchInfo.match_date).toLocaleString()
+          : "";
+
+        if (!matchInfo) {
+          panel.innerHTML = `
+            <div class="data-note">
+              No encontré un partido cargado para este equipo.
+            </div>
+          `;
+          return;
+        }
+
+        if (!usingApiFifa) {
+          panel.innerHTML = `
+            <div class="data-note">
+              No puedo consultar alineaciones oficiales si la API de FIFA no está disponible. Cuando vuelva a responder, las alineaciones se cargan automáticamente desde FIFA.
+            </div>
+          `;
+          return;
+        }
+
+        panel.innerHTML = `
+          <div class="data-note">
+            Cargando alineación oficial desde FIFA…
+          </div>
+        `;
+
+        const lineups = await fetchMatchLineups(matchInfo.id);
+        if (lineups.status === "unavailable") {
+          panel.innerHTML = `
+            <div class="data-note">
+              <strong style="display:block; color: var(--text-primary); margin-bottom: 0.45rem;">Alineación no disponible aún</strong>
+              ${matchLabel ? `<div style="margin-bottom: 0.4rem;">${matchLabel}</div>` : ""}
+              ${matchKickoff ? `<div style="margin-bottom: 0.85rem; color: var(--text-muted); font-size: 0.9rem;">Kick-off: ${matchKickoff}</div>` : ""}
+              La API de FIFA respondió <strong style="color: var(--text-primary);">200 OK</strong> pero con cuerpo <strong style="color: var(--text-primary);">null</strong>. Esto pasa cuando FIFA todavía no publica el feed “live” del partido, y con eso tampoco quedan disponibles <strong style="color: var(--text-primary);">titulares</strong> y <strong style="color: var(--text-primary);">suplentes</strong>.
+            </div>
+          `;
+          return;
+        }
+
+        if (lineups.status !== "ok") {
+          panel.innerHTML = `
+            <div class="data-note">
+              No pude cargar la alineación oficial en este momento. Probá de nuevo en unos segundos.
+            </div>
+          `;
+          return;
+        }
+
+        const team =
+          lineups.home?.id === teamId
+            ? lineups.home
+            : lineups.away?.id === teamId
+              ? lineups.away
+              : null;
+
+        if (!team) {
+          panel.innerHTML = `
+            <div class="data-note">
+              No encontré la alineación del equipo seleccionado dentro del partido.
+            </div>
+          `;
+          return;
+        }
+
+        const startersHtml =
+          team.starters.length === 0
+            ? '<div class="roster-item"><span>Titulares sin publicar</span><span>XI</span></div>'
+            : team.starters
+                .map(
+                  (p) =>
+                    `<div class="roster-item"><span>${p.shirt ? `${p.shirt}. ` : ""}${p.name}</span><span>XI</span></div>`,
+                )
+                .join("");
+
+        const subsHtml =
+          team.subs.length === 0
+            ? '<div class="roster-item"><span>Suplentes sin publicar</span><span>Banco</span></div>'
+            : team.subs
+                .map(
+                  (p) =>
+                    `<div class="roster-item"><span>${p.shirt ? `${p.shirt}. ` : ""}${p.name}</span><span>Banco</span></div>`,
+                )
+                .join("");
+
+        panel.innerHTML = `
+          <div class="lineups-team">
+            <div class="lineups-team-header">
+              <div class="lineups-team-title">
+                ${team.flag_url ? `<img class="team-flag" src="${team.flag_url}" alt="Bandera">` : ""}
+                <span>${team.name}</span>
+              </div>
+            </div>
+            <div class="lineups-meta">
+              ${team.tactics ? `<div class="meta-chip">Sistema: ${team.tactics}</div>` : ""}
+              ${team.coach ? `<div class="meta-chip">DT: ${team.coach}</div>` : ""}
+              <div class="meta-chip">${matchLabel}</div>
+              <div class="meta-chip">${matchKickoff}</div>
+            </div>
+            <div class="roster-grid">
+              <div class="roster-column">
+                <h3>Titulares</h3>
+                <div class="roster-list">${startersHtml}</div>
+              </div>
+              <div class="roster-column">
+                <h3>Suplentes</h3>
+                <div class="roster-list">${subsHtml}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function switchAppScreen(screen) {
+        activeAppScreen = screen === "leaderboard" ? "leaderboard" : "dashboard";
+        const dashboard = document.getElementById("dashboard-layout");
+        const leaderboard = document.getElementById("leaderboard-view");
+        const dashboardTab = document.getElementById("tab-dashboard");
+        const leaderboardTab = document.getElementById("tab-leaderboard");
+
+        dashboard?.classList.toggle("hidden", activeAppScreen !== "dashboard");
+        leaderboard?.classList.toggle("hidden", activeAppScreen !== "leaderboard");
+        dashboardTab?.classList.toggle("active", activeAppScreen === "dashboard");
+        leaderboardTab?.classList.toggle("active", activeAppScreen === "leaderboard");
+      }
+
+      async function checkSession() {
+        const { data } = await supabaseClient.auth.getSession();
+        currentSession = data.session;
+        if (currentSession) {
+          showView("main-view");
+          switchAppScreen("dashboard");
+          await loadInitialData();
+        } else {
+          showView("auth-view");
+        }
+      }
+
+      function showView(viewId) {
+        document.getElementById("auth-view").classList.add("hidden");
+        document.getElementById("main-view").classList.add("hidden");
+        document.getElementById(viewId).classList.remove("hidden");
+      }
+
+      function switchAuthMode(mode) {
+        authMode = mode;
+        document.getElementById("toggle-login").className =
+          mode === "login" ? "active" : "";
+        document.getElementById("toggle-signup").className =
+          mode === "signup" ? "active" : "";
+
+        if (mode === "signup") {
+          document.getElementById("username-field").classList.remove("hidden");
+          document.getElementById("avatar-field").classList.remove("hidden");
+          document.getElementById("auth-submit-btn").innerText = "Crear Cuenta";
+        } else {
+          document.getElementById("username-field").classList.add("hidden");
+          document.getElementById("avatar-field").classList.add("hidden");
+          document.getElementById("auth-submit-btn").innerText = "Entrar";
+        }
+      }
+
+      async function handleAuthSubmit() {
+        const email = document.getElementById("auth-email").value.trim();
+        const password = document.getElementById("auth-password").value;
+        const username = document.getElementById("auth-username").value.trim();
+        const avatarFile = document.getElementById("auth-avatar").files[0];
+
+        if (!email || !password)
+          return alert("Completa los campos obligatorios.");
+
+        if (authMode === "signup") {
+          let avatarUrl = null;
+
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { username: username } },
+          });
+
+          if (error) return alert(error.message);
+
+          if (avatarFile && data.user) {
+            const fileExt = avatarFile.name.split(".").pop();
+            const filePath = `${data.user.id}/avatar.${fileExt}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+              .from("avatars")
+              .upload(filePath, avatarFile);
+
+            if (!uploadError) {
+              const { data: urlData } = supabaseClient.storage
+                .from("avatars")
+                .getPublicUrl(filePath);
+              avatarUrl = urlData.publicUrl;
+
+              await supabaseClient
+                .from("profiles")
+                .update({ avatar_url: avatarUrl })
+                .eq("id", data.user.id);
+            }
+          }
+          alert(
+            "Registro completo. Verifica tu email si tienes activada la confirmación.",
+          );
+        } else {
+          const { error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) return alert(error.message);
+        }
+        await checkSession();
+      }
+
+      async function handleLogout() {
+        await supabaseClient.auth.signOut();
+        await checkSession();
+      }
+
+      async function loadInitialData() {
+        const userId = currentSession.user.id;
+
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+        try {
+          await loadSupabaseTournamentData();
+          usingApiFifa = true;
+        } catch {
+          usingSupabaseData = false;
+          usingApiFifa = false;
+          teamsCache = fallbackData.teams || [];
+          matchesCache = fallbackData.matches || [];
+        }
+
+        const profileSummary = document.getElementById("user-profile-summary");
+        profileSummary.innerHTML = `
+                <img class="profile-avatar" src="${profile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=1"}" alt="Avatar">
+                <div>
+                    <div style="font-weight: 600;">${profile?.username || currentSession.user.email}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Participante Oficial</div>
+                </div>
+            `;
+
+        const selectedChampion =
+          profile?.champion_prediction || getLocalChampionPrediction(userId);
+        populateChampionPicker(selectedChampion);
+
+        await loadLeaderboard();
+        await loadMatchesAndPredictions();
+        renderGroupsOverview();
+        clearSelectedTeamLineup();
+        // renderDataNotes();
+        refreshSyncUi();
+      }
+
+      async function saveChampionPrediction() {
+        const teamId = document.getElementById("champion-select").value;
+        setLocalChampionPrediction(currentSession.user.id, teamId || "");
+
+        if (teamId) {
+          const teamResult = await ensureTeamInDb(teamId);
+          if (!teamResult.ok) {
+            setPendingChampion(currentSession.user.id, true);
+            renderFixtureSyncNote(
+              `Guardado localmente. No pude preparar el equipo campeón en la base: <strong style="color: var(--text-primary);">${describeSyncError(teamResult.error, "teams")}</strong>`,
+              "warn",
+            );
+            refreshSyncUi();
+            return;
+          }
+        }
+
+        const { error } = await supabaseClient
+          .from("profiles")
+          .update({ champion_prediction: teamId || null })
+          .eq("id", currentSession.user.id);
+
+        if (error) {
+          setPendingChampion(currentSession.user.id, true);
+          renderFixtureSyncNote(
+            `Guardado localmente. No pude subir el campeón a la base: <strong style="color: var(--text-primary);">${describeSyncError(error, "profiles")}</strong>`,
+            "warn",
+          );
+          refreshSyncUi();
+          return;
+        }
+
+        setPendingChampion(currentSession.user.id, false);
+        renderFixtureSyncNote("Campeón guardado en la base de datos.", "ok");
+        refreshSyncUi();
+      }
+
+      async function loadLeaderboard() {
+        const { data: profiles } = await supabaseClient
+          .from("profiles")
+          .select("username, predictions(points_earned)")
+          .order("created_at");
+        const leaderboardContainer = document.getElementById("leaderboard");
+        leaderboardContainer.innerHTML = "";
+
+        if (!profiles || profiles.length === 0) {
+          leaderboardContainer.innerHTML =
+            '<div style="color: var(--text-muted);">Todavía no hay suficientes participantes para armar la tabla general.</div>';
+          return;
+        }
+
+        const calculated = profiles
+          .map((p) => {
+            const total = (p.predictions || []).reduce(
+              (acc, curr) => acc + (curr.points_earned || 0),
+              0,
+            );
+            return { username: p.username, score: total };
+          })
+          .sort((a, b) => b.score - a.score);
+
+        calculated.forEach((user, idx) => {
+          const item = document.createElement("div");
+          item.className = "leaderboard-item";
+          item.innerHTML = `<span>${idx + 1}. ${user.username}</span><strong>${user.score} pts</strong>`;
+          leaderboardContainer.appendChild(item);
+        });
+      }
+
+      async function loadMatchesAndPredictions() {
+        const userId = currentSession.user.id;
+
+        const localPredictionMap = getLocalPredictions(userId);
+        let dbPredictionMap = {};
+
+        try {
+          const { data: dbPreds } = await supabaseClient
+            .from("predictions")
+            .select("match_id, predicted_score_a, predicted_score_b")
+            .eq("user_id", userId);
+
+          dbPredictionMap = (dbPreds || []).reduce((acc, row) => {
+            acc[String(row.match_id)] = {
+              predicted_score_a: row.predicted_score_a,
+              predicted_score_b: row.predicted_score_b,
+            };
+            return acc;
+          }, {});
+        } catch {
+          dbPredictionMap = {};
+        }
+
+        const predictionMap = {
+          ...dbPredictionMap,
+          ...localPredictionMap,
+        };
+        const baseMatches = getBaseMatches();
+        const matchesToRender = baseMatches.map((match) => ({
+          ...match,
+          predictions: predictionMap[match.id]
+            ? [
+                {
+                  user_id: userId,
+                  predicted_score_a: predictionMap[match.id]?.predicted_score_a,
+                  predicted_score_b: predictionMap[match.id]?.predicted_score_b,
+                },
+              ]
+            : [],
+        }));
+
+        const container = document.getElementById("matches-container");
+        fixtureMatchesRenderCache = matchesToRender;
+        fixtureState.totalItems = fixtureMatchesRenderCache.length;
+        fixtureState.totalPages = Math.max(
+          1,
+          Math.ceil(fixtureState.totalItems / fixtureState.pageSize),
+        );
+        fixtureState.page = Math.min(fixtureState.page, fixtureState.totalPages);
+
+        if (!fixtureMatchesRenderCache.length) {
+          container.innerHTML = "";
+          container.innerHTML =
+            '<div style="color: var(--text-muted); text-align: center; padding: 2rem;">No pude cargar partidos desde Supabase.</div>';
+          updateFixturePaginationControls();
+          return;
+        }
+
+        fixtureMatchesRenderCache.sort(
+          (a, b) => new Date(a.match_date) - new Date(b.match_date),
+        );
+
+        renderFixturePage();
+        updateFixturePaginationControls();
+        // renderDataNotes();
+        refreshSyncUi();
+      }
+
+      function renderFixturePage() {
+        const container = document.getElementById("matches-container");
+        container.innerHTML = "";
+
+        if (fixtureState.collapsed) return;
+
+        const startIndex = (fixtureState.page - 1) * fixtureState.pageSize;
+        const endIndex = startIndex + fixtureState.pageSize;
+        const pageMatches = fixtureMatchesRenderCache.slice(startIndex, endIndex);
+
+        pageMatches.forEach((match) => {
+          const userPred = (match.predictions || [])[0] || {
+            predicted_score_a: "",
+            predicted_score_b: "",
+          };
+          const matchTime = new Date(match.match_date);
+          const isLocked =
+            matchTime.getTime() - Date.now() < 24 * 60 * 60 * 1000 ||
+            match.finished;
+
+          const card = document.createElement("div");
+          card.className = "match-card";
+
+          const teamAName = match.team_a_name || match.team_a_id;
+          const teamBName = match.team_b_name || match.team_b_id;
+
+          card.innerHTML = `
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">
+                            ${matchTime.toLocaleString()} - ${match.stage.toUpperCase()} (Grupo ${match.group_id || "N/A"})${match.venue ? ` · ${match.venue}` : ""}
+                        </div>
+                        <div style="font-size: 1.1rem; font-weight: 500; margin-top: 0.25rem;">
+                            ${teamAName} vs ${teamBName}
+                        </div>
+                        ${match.finished ? `<div style="font-size: 0.85rem; color: #34c759; margin-top: 0.25rem;">Resultado Real: ${match.score_a} - ${match.score_b}</div>` : ""}
+                    </div>
+                    <div class="match-actions">
+                      <div class="prediction-box">
+                          <input type="number" min="0" class="input-premium input-score" 
+                              id="pred-a-${match.id}" value="${userPred.predicted_score_a}" 
+                              ${isLocked ? "disabled" : ""} placeholder="-"
+                              onchange="savePrediction('${match.id}')">
+                          <span style="color: var(--text-muted)">:</span>
+                          <input type="number" min="0" class="input-premium input-score" 
+                              id="pred-b-${match.id}" value="${userPred.predicted_score_b}" 
+                              ${isLocked ? "disabled" : ""} placeholder="-"
+                              onchange="savePrediction('${match.id}')">
+                      </div>
+                      <button class="lineup-toggle" type="button" onclick="selectTeamNextMatch('${match.team_a_id}')">
+                        Ver local (FIFA)
+                      </button>
+                    </div>
+                `;
+          container.appendChild(card);
+        });
+      }
+
+      function updateFixturePaginationControls() {
+        const prevBtn = document.getElementById("fixture-prev-btn");
+        const nextBtn = document.getElementById("fixture-next-btn");
+        const indicator = document.getElementById("fixture-page-indicator");
+        const toggleBtn = document.getElementById("fixture-toggle-btn");
+
+        if (!prevBtn || !nextBtn || !indicator || !toggleBtn) return;
+
+        indicator.innerHTML = `Página ${fixtureState.page} de ${fixtureState.totalPages} · ${fixtureState.totalItems} partidos`;
+        prevBtn.disabled = fixtureState.collapsed || fixtureState.page <= 1;
+        nextBtn.disabled =
+          fixtureState.collapsed || fixtureState.page >= fixtureState.totalPages;
+        toggleBtn.innerHTML = fixtureState.collapsed
+          ? "Mostrar Fixture"
+          : "Ocultar Fixture";
+      }
+
+      function goToFixturePage(delta) {
+        fixtureState.page = Math.max(
+          1,
+          Math.min(fixtureState.totalPages, fixtureState.page + delta),
+        );
+        renderFixturePage();
+        updateFixturePaginationControls();
+      }
+
+      function toggleFixtureVisibility() {
+        fixtureState.collapsed = !fixtureState.collapsed;
+        renderFixturePage();
+        updateFixturePaginationControls();
+      }
+
+      function changeFixturePageSize() {
+        const select = document.getElementById("fixture-page-size");
+        const nextSize = parseInt(select.value, 10);
+        if (!Number.isFinite(nextSize) || nextSize <= 0) return;
+
+        fixtureState.pageSize = nextSize;
+        fixtureState.totalPages = Math.max(
+          1,
+          Math.ceil(fixtureState.totalItems / fixtureState.pageSize),
+        );
+        fixtureState.page = Math.min(fixtureState.page, fixtureState.totalPages);
+        renderFixturePage();
+        updateFixturePaginationControls();
+      }
+
+      async function syncAllToDatabase() {
+        if (!currentSession) return;
+        const userId = currentSession.user.id;
+
+        const pending = getPendingSync(userId);
+        if (!pending.predictions.length && !pending.champion) {
+          refreshSyncUi();
+          return;
+        }
+
+        renderFixtureSyncNote("Sincronizando con la base de datos…", "loading");
+
+        if (pending.champion) {
+          const championId = getLocalChampionPrediction(userId);
+          let championReady = true;
+          if (championId) {
+            const teamResult = await ensureTeamInDb(championId);
+            championReady = teamResult.ok;
+          }
+
+          if (championReady) {
+            const { error: champError } = await supabaseClient
+              .from("profiles")
+              .update({ champion_prediction: championId || null })
+              .eq("id", userId);
+
+            if (!champError) setPendingChampion(userId, false);
+          }
+        }
+
+        const localMap = getLocalPredictions(userId);
+        for (const matchId of pending.predictions.slice()) {
+          const scores = localMap[matchId];
+          if (!scores) {
+            removePendingPrediction(userId, matchId);
+            continue;
+          }
+
+          const match = findMatchById(matchId);
+          const ensureResult = await ensureMatchAndTeamsInDb(match);
+          if (!ensureResult.ok) {
+            continue;
+          }
+
+          const upsertResult = await upsertPredictionToDb(
+            userId,
+            matchId,
+            scores.predicted_score_a,
+            scores.predicted_score_b,
+          );
+
+          if (upsertResult.ok) {
+            removePendingPrediction(userId, matchId);
+          }
+        }
+
+        const remaining = getPendingSync(userId);
+        if (!remaining.predictions.length && !remaining.champion) {
+          renderFixtureSyncNote(
+            "Sincronización completa: predicciones guardadas en la base de datos.",
+            "ok",
+          );
+        } else {
+          renderFixtureSyncNote(
+            `Quedaron pendientes <strong style="color: var(--text-primary);">${remaining.predictions.length}</strong> predicciones${remaining.champion ? " y el campeón" : ""}. Si esto persiste, suele ser por permisos (RLS) o porque la tabla <strong style="color: var(--text-primary);">matches</strong> no permite upsert desde el cliente.`,
+            "warn",
+          );
+        }
+
+        refreshSyncUi();
+        await loadMatchesAndPredictions();
+      }
+
+      async function savePrediction(matchId) {
+        const scoreA = document.getElementById(`pred-a-${matchId}`).value;
+        const scoreB = document.getElementById(`pred-b-${matchId}`).value;
+
+        if (scoreA === "" || scoreB === "") return;
+
+        const userId = currentSession.user.id;
+        saveLocalPrediction(userId, matchId, scoreA, scoreB);
+        addPendingPrediction(userId, matchId);
+        refreshSyncUi();
+
+        const match = findMatchById(matchId);
+        const ensureResult = await ensureMatchAndTeamsInDb(match);
+        if (!ensureResult.ok) {
+          renderFixtureSyncNote(
+            `Guardado localmente. No pude preparar los datos del partido en la base: <strong style="color: var(--text-primary);">${describeSyncError(ensureResult.error, ensureResult.reason === "match_upsert_failed" ? "matches" : "teams")}</strong>`,
+            "warn",
+          );
+          return;
+        }
+
+        const upsertResult = await upsertPredictionToDb(
+          userId,
+          matchId,
+          scoreA,
+          scoreB,
+        );
+
+        if (!upsertResult.ok) {
+          renderFixtureSyncNote(
+            `Guardado localmente. No pude subir la predicción a la base: <strong style="color: var(--text-primary);">${describeSyncError(upsertResult.error, "predictions")}</strong>`,
+            "warn",
+          );
+          return;
+        }
+
+        removePendingPrediction(userId, matchId);
+        renderFixtureSyncNote("Predicción guardada en la base de datos.", "ok");
+        refreshSyncUi();
+        await loadMatchesAndPredictions();
+      }
+
+      document.addEventListener("click", (event) => {
+        const picker = document.getElementById("champion-picker");
+        if (picker && !picker.contains(event.target)) {
+          closeChampionDropdown();
+        }
+      });
+
+      window.onload = checkSession;
+    </script>
+  </body>
+</html>
